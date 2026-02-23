@@ -4,11 +4,39 @@
   "description": "MCP server for multi-round AI brainstorming debates across multiple models",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "brainstorm-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "brainstorm.config.example.json",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "start": "node dist/index.js",
     "dev": "npx tsx src/index.ts"
   },
+  "keywords": [
+    "mcp",
+    "brainstorm",
+    "ai",
+    "llm",
+    "openai",
+    "deepseek",
+    "groq",
+    "ollama",
+    "model-context-protocol",
+    "multi-model",
+    "debate"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spranab/brainstorm-mcp.git"
+  },
+  "author": "Pranab",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "openai": "^4.80.0",
