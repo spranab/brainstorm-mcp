@@ -1,0 +1,21 @@
+{
+  "providers": {
+    "openai": {
+      "model": "gpt-4o",
+      "apiKeyEnv": "OPENAI_API_KEY"
+    },
+    "deepseek": {
+      "model": "deepseek-chat",
+      "apiKeyEnv": "DEEPSEEK_API_KEY"
+    },
+    "groq": {
+      "model": "llama-3.3-70b-versatile",
+      "apiKeyEnv": "GROQ_API_KEY",
+      "baseURL": "https://api.groq.com/openai/v1"
+    },
+    "ollama": {
+      "model": "llama3.1",
+      "baseURL": "http://localhost:11434/v1"
+    }
+  }
+}

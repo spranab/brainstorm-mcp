@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.mcp.json
+brainstorm.config.json
+*.env
+.env*

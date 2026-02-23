@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "brainstorm": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key",
+        "DEEPSEEK_API_KEY": "your-deepseek-api-key",
+        "BRAINSTORM_CONFIG": "/path/to/brainstorm.config.json"
+      }
+    }
+  }
+}
