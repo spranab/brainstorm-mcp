@@ -1,0 +1,24 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      OPENAI_API_KEY:
+        type: string
+        description: OpenAI API key for GPT models
+      DEEPSEEK_API_KEY:
+        type: string
+        description: DeepSeek API key
+      GROQ_API_KEY:
+        type: string
+        description: Groq API key for Llama models
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'brainstorm-mcp'],
+      env: {
+        ...(config.OPENAI_API_KEY ? { OPENAI_API_KEY: config.OPENAI_API_KEY } : {}),
+        ...(config.DEEPSEEK_API_KEY ? { DEEPSEEK_API_KEY: config.DEEPSEEK_API_KEY } : {}),
+        ...(config.GROQ_API_KEY ? { GROQ_API_KEY: config.GROQ_API_KEY } : {})
+      }
+    })

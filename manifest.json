@@ -1,0 +1,70 @@
+{
+  "manifest_version": "0.3",
+  "name": "brainstorm-mcp",
+  "display_name": "Brainstorm — Multi-Model AI Debates",
+  "version": "1.0.1",
+  "description": "MCP server for multi-round AI brainstorming debates between multiple models (GPT, DeepSeek, Groq, Ollama, etc.).",
+  "long_description": "brainstorm-mcp lets your AI assistant orchestrate structured debates between multiple LLMs. Ask Claude to brainstorm a topic, and it sends the question to GPT, DeepSeek, Groq, Ollama, or any OpenAI-compatible model in parallel. Models see each other's responses across multiple rounds, refine their positions, and a synthesizer produces a final consolidated output.\n\n**Key features:**\n- Multi-round debates with cross-model critique\n- Parallel execution across all configured providers\n- Per-model timeouts — one slow model won't block others\n- Automatic context truncation for long debates\n- Cost estimation per debate\n- Resilient — one model failing doesn't abort the debate\n- Synthesizer fallback across models\n- Works with any OpenAI-compatible API (including local Ollama)",
+  "author": {
+    "name": "spranab",
+    "url": "https://github.com/spranab"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spranab/brainstorm-mcp.git"
+  },
+  "homepage": "https://github.com/spranab/brainstorm-mcp#readme",
+  "documentation": "https://github.com/spranab/brainstorm-mcp#readme",
+  "support": "https://github.com/spranab/brainstorm-mcp/issues",
+  "keywords": [
+    "mcp",
+    "brainstorming",
+    "multi-model",
+    "ai-debate",
+    "openai",
+    "deepseek",
+    "groq",
+    "ollama",
+    "model-context-protocol",
+    "llm-tools"
+  ],
+  "license": "MIT",
+  "privacy_policies": [],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "npx",
+      "args": ["-y", "brainstorm-mcp"],
+      "env": {
+        "OPENAI_API_KEY": "${user_config.openai_api_key}",
+        "DEEPSEEK_API_KEY": "${user_config.deepseek_api_key}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "brainstorm", "description": "Run a multi-round brainstorming debate between configured AI models" },
+    { "name": "list_providers", "description": "Show all configured providers, models, and API key status" },
+    { "name": "add_provider", "description": "Dynamically add a new AI provider at runtime" }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {
+    "openai_api_key": {
+      "type": "secret",
+      "title": "OpenAI API Key",
+      "description": "API key for OpenAI models (GPT-4o, etc.)",
+      "required": false
+    },
+    "deepseek_api_key": {
+      "type": "secret",
+      "title": "DeepSeek API Key",
+      "description": "API key for DeepSeek models",
+      "required": false
+    }
+  }
+}

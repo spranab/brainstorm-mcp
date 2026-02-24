@@ -2,7 +2,21 @@
 
 An MCP server that runs multi-round brainstorming debates between AI models. Connect it to Claude Code (or any MCP client) and let GPT, DeepSeek, Groq, Ollama, and others debate your ideas — then get a synthesized final output.
 
-## How it works
+**No more single-perspective answers.** brainstorm-mcp pits multiple LLMs against each other so you get diverse viewpoints, critiques, and a consolidated synthesis.
+
+## Features
+
+- **Multi-round debates** — Models see and critique each other's responses across rounds
+- **Parallel execution** — All models respond concurrently within each round
+- **Per-model timeouts** — 2-minute timeout per API call, one slow model won't block others
+- **Context truncation** — Automatically truncates history when approaching context limits
+- **Cost estimation** — Shows estimated token usage and cost per debate
+- **Resilient** — One model failing doesn't abort the debate
+- **Synthesizer fallback** — If the primary synthesizer fails, tries other models
+- **GPT-5.x / o3 / o4 compatible** — Automatically uses `max_completion_tokens` for newer OpenAI models
+- **Cross-platform** — Works on macOS, Windows, and Linux
+
+## How It Works
 
 1. You ask Claude: *"Brainstorm the best architecture for a real-time app"*
 2. The tool sends the topic to all configured AI models in parallel
@@ -13,40 +27,7 @@ An MCP server that runs multi-round brainstorming debates between AI models. Con
 
 ## Quick Start
 
-```bash
-# Clone and build
-git clone https://github.com/AIPoweredSolutions/brainstorm-mcp.git
-cd brainstorm-mcp
-npm install
-npm run build
-```
-
-### Configure providers
-
-Copy the example config and add your API keys:
-
-```bash
-cp brainstorm.config.example.json brainstorm.config.json
-```
-
-Edit `brainstorm.config.json`:
-
-```json
-{
-  "providers": {
-    "openai": {
-      "model": "gpt-4o",
-      "apiKeyEnv": "OPENAI_API_KEY"
-    },
-    "deepseek": {
-      "model": "deepseek-chat",
-      "apiKeyEnv": "DEEPSEEK_API_KEY"
-    }
-  }
-}
-```
-
-### Connect to Claude Code
+### With Claude Code
 
 Add to your project's `.mcp.json`:
 
@@ -54,27 +35,64 @@ Add to your project's `.mcp.json`:
 {
   "mcpServers": {
     "brainstorm": {
-      "command": "node",
-      "args": ["/path/to/brainstorm-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "brainstorm-mcp"],
       "env": {
         "OPENAI_API_KEY": "sk-...",
-        "DEEPSEEK_API_KEY": "sk-...",
-        "BRAINSTORM_CONFIG": "/path/to/brainstorm.config.json"
+        "DEEPSEEK_API_KEY": "sk-..."
       }
     }
   }
 }
 ```
 
-Restart Claude Code, then just ask:
+### With Claude Desktop
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "brainstorm": {
+      "command": "npx",
+      "args": ["-y", "brainstorm-mcp"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "DEEPSEEK_API_KEY": "sk-..."
+      }
+    }
+  }
+}
+```
+
+### Manual install
+
+```bash
+npm install -g brainstorm-mcp
+brainstorm-mcp
+```
+
+Then just ask Claude:
 
 > *"Brainstorm the best way to handle authentication in a microservices architecture"*
 
 ## Configuration
 
-### brainstorm.config.json
+### Option 1: Environment Variables (simplest)
 
-The config file defines AI providers. Known providers (`openai`, `deepseek`, `groq`, `mistral`, `together`) don't need a `baseURL` — it's auto-detected.
+Just set API keys as env vars — the server auto-detects providers:
+
+```
+OPENAI_API_KEY=sk-...
+OPENAI_DEFAULT_MODEL=gpt-4o
+DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_DEFAULT_MODEL=deepseek-chat
+GROQ_API_KEY=gsk_...
+```
+
+### Option 2: Config File (full control)
+
+Set `BRAINSTORM_CONFIG` to point to a JSON config file:
 
 ```json
 {
@@ -99,28 +117,23 @@ The config file defines AI providers. Known providers (`openai`, `deepseek`, `gr
 }
 ```
 
+Known providers (`openai`, `deepseek`, `groq`, `mistral`, `together`) don't need a `baseURL` — it's auto-detected.
+
 | Field | Required | Description |
 |-------|----------|-------------|
 | `model` | Yes | Default model ID to use |
 | `apiKeyEnv` | No | Environment variable name for the API key. Omit for local models (Ollama) |
 | `baseURL` | No | API endpoint. Auto-detected for known providers |
 
-### Fallback: Environment Variables
+## Tools
 
-If no config file exists, the server detects providers from env vars:
+| Tool | Description |
+|------|-------------|
+| `brainstorm` | Run a multi-round debate between configured AI models |
+| `list_providers` | Show all configured providers, models, and API key status |
+| `add_provider` | Dynamically add a provider at runtime |
 
-```
-OPENAI_API_KEY=sk-...
-OPENAI_DEFAULT_MODEL=gpt-4o
-DEEPSEEK_API_KEY=sk-...
-DEEPSEEK_DEFAULT_MODEL=deepseek-chat
-```
-
-## MCP Tools
-
-### `brainstorm`
-
-Run a multi-round debate. Only `topic` is required — everything else has sensible defaults.
+### `brainstorm` Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -128,26 +141,40 @@ Run a multi-round debate. Only `topic` is required — everything else has sensi
 | `models` | string[] | all providers | Specific models as `provider:model` |
 | `rounds` | number | 3 | Number of debate rounds (1-10) |
 | `synthesizer` | string | first model | Model for final synthesis |
-| `systemPrompt` | string | — | Custom system prompt |
+| `systemPrompt` | string | — | Custom system prompt for all models |
 
-### `list_providers`
+## Usage Examples
 
-Shows all configured providers, their default models, and API key status.
+### Basic brainstorm
 
-### `add_provider`
+> "Brainstorm the pros and cons of microservices vs monolith for a startup"
 
-Dynamically add a provider at runtime.
+### Targeted models
 
-## Features
+> "Use brainstorm with models openai:gpt-4o and deepseek:deepseek-chat to debate whether React or Vue is better for enterprise apps"
 
-- **Multi-round debates** — Models see and critique each other's responses
-- **Parallel execution** — All models respond concurrently within each round
-- **Per-model timeouts** — 2-minute timeout per API call, one slow model won't block others
-- **Context truncation** — Automatically truncates history when approaching context limits
-- **Cost estimation** — Shows estimated token usage and cost
-- **Resilient** — One model failing doesn't abort the debate
-- **Synthesizer fallback** — If the primary synthesizer fails, tries other models
-- **GPT-5.x / o3 / o4 compatible** — Automatically uses `max_completion_tokens` for newer OpenAI models
+### Deep dive with more rounds
+
+> "Brainstorm with 5 rounds: what's the best database strategy for a social media app with 10M users?"
+
+## Privacy Policy
+
+brainstorm-mcp itself does not collect any user data. It acts as a proxy to the AI providers you configure. Your prompts and debate content are sent to the respective provider APIs (OpenAI, DeepSeek, Groq, etc.) according to their privacy policies. For local models (Ollama), all data stays on your machine.
+
+## Development
+
+```bash
+git clone https://github.com/spranab/brainstorm-mcp.git
+cd brainstorm-mcp
+npm install
+npm run build
+npm start
+```
+
+## Support
+
+- **Issues**: https://github.com/spranab/brainstorm-mcp/issues
+- **Repository**: https://github.com/spranab/brainstorm-mcp
 
 ## License
 
