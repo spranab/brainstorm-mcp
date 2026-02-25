@@ -34,3 +34,19 @@ export interface DebateStats {
 }
 
 export type ProgressCallback = (message: string) => void;
+
+export interface DebateSession {
+  id: string;
+  topic: string;
+  modelIdentifiers: string[];
+  totalRounds: number;
+  currentRound: number;
+  rounds: RoundResponse[][];
+  synthesizerIdentifier: string;
+  systemPrompt?: string;
+  failedModels: Set<string>;
+  startTime: number;
+  createdAt: number;
+  totalCharsProcessed: number;
+  status: "awaiting_host" | "complete";
+}

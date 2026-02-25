@@ -1,11 +1,12 @@
 # brainstorm-mcp
 
-An MCP server that runs multi-round brainstorming debates between AI models. Connect it to Claude Code (or any MCP client) and let GPT, DeepSeek, Groq, Ollama, and others debate your ideas — then get a synthesized final output.
+An MCP server that runs multi-round brainstorming debates between AI models. Connect it to Claude Code (or any MCP client) and let GPT, DeepSeek, Groq, Ollama, and others debate your ideas — with Claude as an active participant in every round.
 
 **No more single-perspective answers.** brainstorm-mcp pits multiple LLMs against each other so you get diverse viewpoints, critiques, and a consolidated synthesis.
 
 ## Features
 
+- **Claude as participant** — Claude debates alongside external models, bringing full conversation context
 - **Multi-round debates** — Models see and critique each other's responses across rounds
 - **Parallel execution** — All models respond concurrently within each round
 - **Per-model timeouts** — 2-minute timeout per API call, one slow model won't block others
@@ -13,17 +14,20 @@ An MCP server that runs multi-round brainstorming debates between AI models. Con
 - **Cost estimation** — Shows estimated token usage and cost per debate
 - **Resilient** — One model failing doesn't abort the debate
 - **Synthesizer fallback** — If the primary synthesizer fails, tries other models
+- **Session management** — Interactive sessions with 10-minute TTL, automatic cleanup
 - **GPT-5.x / o3 / o4 compatible** — Automatically uses `max_completion_tokens` for newer OpenAI models
 - **Cross-platform** — Works on macOS, Windows, and Linux
 
 ## How It Works
 
 1. You ask Claude: *"Brainstorm the best architecture for a real-time app"*
-2. The tool sends the topic to all configured AI models in parallel
-3. Each model responds independently (Round 1)
-4. Models see each other's responses and refine their positions (Rounds 2-N)
+2. The tool sends the topic to all configured AI models in parallel (Round 1)
+3. Claude reads their responses and contributes its own perspective
+4. All models (including Claude) see each other's responses and refine their positions (Rounds 2-N)
 5. A synthesizer model produces a final consolidated output
 6. You get back a structured debate with the synthesis
+
+**Claude doesn't just orchestrate — it debates alongside GPT, DeepSeek, and others.**
 
 ## Quick Start
 
@@ -75,6 +79,22 @@ brainstorm-mcp
 Then just ask Claude:
 
 > *"Brainstorm the best way to handle authentication in a microservices architecture"*
+
+## Interactive Mode (Claude as Participant)
+
+By default, Claude actively participates in every round of the debate:
+
+1. **Round 1**: External models respond to the topic independently
+2. **Claude's turn**: Claude reads their responses and contributes its own perspective via `brainstorm_respond`
+3. **Round 2**: External models see Claude's response alongside everyone else's, and refine
+4. **Claude's turn**: Claude refines its position based on the new responses
+5. Repeat until all rounds are complete, then synthesis runs automatically
+
+This means Claude brings its full conversation context into the debate — it knows what you've been working on, what you've discussed, and can contribute meaningfully rather than just passing messages.
+
+To run a non-interactive debate (external models only, no Claude participation):
+
+> *"Brainstorm with participate=false about..."*
 
 ## Configuration
 
@@ -130,6 +150,7 @@ Known providers (`openai`, `deepseek`, `groq`, `mistral`, `together`) don't need
 | Tool | Description |
 |------|-------------|
 | `brainstorm` | Run a multi-round debate between configured AI models |
+| `brainstorm_respond` | Submit Claude's response for the current round of an interactive session |
 | `list_providers` | Show all configured providers, models, and API key status |
 | `add_provider` | Dynamically add a provider at runtime |
 
@@ -142,6 +163,14 @@ Known providers (`openai`, `deepseek`, `groq`, `mistral`, `together`) don't need
 | `rounds` | number | 3 | Number of debate rounds (1-10) |
 | `synthesizer` | string | first model | Model for final synthesis |
 | `systemPrompt` | string | — | Custom system prompt for all models |
+| `participate` | boolean | true | Whether Claude joins as an active debater |
+
+### `brainstorm_respond` Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `session_id` | string | Session ID from the brainstorm tool |
+| `response` | string | Claude's contribution (min 50 chars) |
 
 ## Usage Examples
 

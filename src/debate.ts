@@ -24,13 +24,11 @@ const COST_PER_MILLION: Record<string, number> = {
 };
 const DEFAULT_COST_PER_MILLION = 3;
 
-function estimateTokens(text: string): number {
-  // ~4 chars per token is a reasonable approximation
+export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function estimateCost(models: string[], totalTokens: number): string {
-  // Average cost across all models used
+export function estimateCost(models: string[], totalTokens: number): string {
   let totalCostPerMillion = 0;
   for (const id of models) {
     const modelName = id.split(":")[1] || id;
@@ -54,8 +52,6 @@ async function callModel(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    // Newer OpenAI models (gpt-5.x, o3, o4) require max_completion_tokens
-    // instead of max_tokens. Use max_completion_tokens for those.
     const useNewTokenParam =
       /^(gpt-5|o[0-9])/.test(model.modelId);
 
@@ -108,10 +104,9 @@ async function callModel(
  * Build history context from previous rounds, truncating individual
  * responses if the total would exceed context limits.
  */
-function buildHistoryContext(rounds: RoundResponse[][]): string {
+export function buildHistoryContext(rounds: RoundResponse[][]): string {
   const sections: string[] = [];
 
-  // Calculate total chars to decide if truncation is needed
   let totalChars = 0;
   for (const round of rounds) {
     for (const resp of round) {
@@ -167,6 +162,148 @@ function collectRoundResponses(
   });
 }
 
+/**
+ * Run a single round with external models. Used by the interactive flow.
+ */
+export async function runExternalRound(
+  topic: string,
+  modelIdentifiers: string[],
+  roundNumber: number,
+  totalRounds: number,
+  previousRounds: RoundResponse[][],
+  systemPrompt?: string,
+  onProgress?: ProgressCallback
+): Promise<{ responses: RoundResponse[]; failedModels: string[] }> {
+  const log = onProgress || (() => {});
+  const failedSet = new Set<string>();
+
+  const models = modelIdentifiers.map((id) => ({
+    resolved: resolveModel(id),
+    label: id,
+  }));
+
+  log(
+    `Round ${roundNumber}/${totalRounds}: ${models.map((m) => m.label).join(", ")} responding...`
+  );
+
+  if (roundNumber === 1) {
+    const round1System =
+      systemPrompt ||
+      "You are participating in a multi-model brainstorming debate. " +
+        "Provide your best thinking on the given topic. " +
+        "Be specific, creative, and substantive.";
+
+    const results = await Promise.allSettled(
+      models.map((m) => callModel(m.resolved, m.label, round1System, topic))
+    );
+    const responses = collectRoundResponses(results, models, roundNumber, failedSet);
+
+    for (const r of responses) {
+      if (r.error) {
+        log(`Round ${roundNumber}: ${r.modelId} failed — ${r.error}`);
+      } else {
+        log(`Round ${roundNumber}: ${r.modelId} responded (${r.content.length} chars)`);
+      }
+    }
+
+    return { responses, failedModels: Array.from(failedSet) };
+  }
+
+  // Rounds 2+: refinement with full history
+  const history = buildHistoryContext(previousRounds);
+
+  const roundSystem =
+    `You are in round ${roundNumber} of ${totalRounds} of a multi-model brainstorming debate. ` +
+    `You can see all previous responses from all participants (including the host AI). ` +
+    `Build upon the best ideas, challenge weak reasoning, add new perspectives, ` +
+    `and refine your position. Be specific about what you agree/disagree with and why.`;
+
+  const roundUserMessage =
+    `Original topic: ${topic}\n\n${history}\n\n` +
+    `Now provide your refined response for round ${roundNumber}. Consider all perspectives above.`;
+
+  const results = await Promise.allSettled(
+    models.map((m) =>
+      callModel(m.resolved, m.label, roundSystem, roundUserMessage)
+    )
+  );
+  const responses = collectRoundResponses(results, models, roundNumber, failedSet);
+
+  for (const r of responses) {
+    if (r.error) {
+      log(`Round ${roundNumber}: ${r.modelId} failed — ${r.error}`);
+    } else {
+      log(`Round ${roundNumber}: ${r.modelId} responded (${r.content.length} chars)`);
+    }
+  }
+
+  return { responses, failedModels: Array.from(failedSet) };
+}
+
+/**
+ * Run the synthesis step. Used by the interactive flow after all rounds.
+ */
+export async function runSynthesis(
+  topic: string,
+  allRounds: RoundResponse[][],
+  synthesizerIdentifier: string,
+  modelIdentifiers: string[],
+  onProgress?: ProgressCallback
+): Promise<string> {
+  const log = onProgress || (() => {});
+  const fullHistory = buildHistoryContext(allRounds);
+
+  const synthesisSystem =
+    "You are the synthesizer in a multi-model brainstorming debate. " +
+    "Create a comprehensive, well-organized final output that: " +
+    "(1) Identifies the strongest ideas and points of consensus, " +
+    "(2) Notes important points of disagreement and why they matter, " +
+    "(3) Provides a clear, actionable conclusion. " +
+    "Be thorough but concise.";
+
+  const synthesisUserMessage =
+    `Original topic: ${topic}\n\n${fullHistory}\n\n` +
+    `Please synthesize the above debate into a comprehensive final output.`;
+
+  log(`Synthesizing final output using ${synthesizerIdentifier}...`);
+
+  try {
+    const synthesizerModel = resolveModel(synthesizerIdentifier);
+    return await callModel(
+      synthesizerModel,
+      synthesizerIdentifier,
+      synthesisSystem,
+      synthesisUserMessage
+    );
+  } catch {
+    log(`Synthesizer ${synthesizerIdentifier} failed, trying fallback models...`);
+    // Try fallback models
+    for (const id of modelIdentifiers) {
+      if (id === synthesizerIdentifier) continue;
+      try {
+        const fallback = resolveModel(id);
+        const result = await callModel(
+          fallback,
+          id,
+          synthesisSystem,
+          synthesisUserMessage
+        );
+        log(`Synthesis completed by fallback model ${id}`);
+        return result;
+      } catch {
+        continue;
+      }
+    }
+    return (
+      "Synthesis failed — all models encountered errors during the synthesis step. " +
+      "Please review the raw debate rounds above."
+    );
+  }
+}
+
+/**
+ * Run a complete non-interactive debate. Used when participate=false.
+ */
 export async function runDebate(
   topic: string,
   modelIdentifiers: string[],
@@ -179,7 +316,6 @@ export async function runDebate(
   const log = onProgress || (() => {});
   let totalCharsProcessed = 0;
 
-  // Resolve all "provider:model" strings
   const models: { resolved: ResolvedModel; label: string }[] = [];
   for (const id of modelIdentifiers) {
     models.push({ resolved: resolveModel(id), label: id });
@@ -188,8 +324,7 @@ export async function runDebate(
   const synthesizerLabel = synthesizerIdentifier || modelIdentifiers[0];
   const synthesizerModel = resolveModel(synthesizerLabel);
 
-  // Cost estimation
-  const estimatedTokensPerRound = models.length * 4096; // max_tokens per model
+  const estimatedTokensPerRound = models.length * 4096;
   const inputTokensEstimate = models.length * estimateTokens(topic) * rounds;
   const totalEstTokens =
     estimatedTokensPerRound * (rounds + 1) + inputTokensEstimate;
@@ -202,7 +337,7 @@ export async function runDebate(
   const allRounds: RoundResponse[][] = [];
   const failedSet = new Set<string>();
 
-  // Round 1: Independent responses
+  // Round 1
   log(
     `Round 1/${rounds}: ${models.map((m) => m.label).join(", ")} responding...`
   );
@@ -234,7 +369,7 @@ export async function runDebate(
     }
   }
 
-  // Rounds 2 through N: Iterative refinement
+  // Rounds 2-N
   for (let r = 2; r <= rounds; r++) {
     log(
       `Round ${r}/${rounds}: ${models.map((m) => m.label).join(", ")} refining...`
