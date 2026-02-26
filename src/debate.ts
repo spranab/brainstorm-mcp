@@ -21,6 +21,9 @@ const COST_PER_MILLION: Record<string, number> = {
   "o4-mini": 2,
   "deepseek-chat": 0.5,
   "deepseek-reasoner": 2,
+  "gemini-2.5-pro": 5,
+  "gemini-2.5-flash": 0.5,
+  "gemini-2.0-flash": 0.3,
 };
 const DEFAULT_COST_PER_MILLION = 3;
 

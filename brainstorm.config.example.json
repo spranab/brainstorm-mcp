@@ -4,6 +4,10 @@
       "model": "gpt-4o",
       "apiKeyEnv": "OPENAI_API_KEY"
     },
+    "gemini": {
+      "model": "gemini-2.5-flash",
+      "apiKeyEnv": "GEMINI_API_KEY"
+    },
     "deepseek": {
       "model": "deepseek-chat",
       "apiKeyEnv": "DEEPSEEK_API_KEY"

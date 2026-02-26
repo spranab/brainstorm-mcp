@@ -11,11 +11,13 @@ const KNOWN_BASE_URLS: Record<string, string> = {
   groq: "https://api.groq.com/openai/v1",
   mistral: "https://api.mistral.ai/v1",
   together: "https://api.together.xyz/v1",
+  gemini: "https://generativelanguage.googleapis.com/v1beta/openai",
 };
 
 const KNOWN_DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o",
   deepseek: "deepseek-chat",
+  gemini: "gemini-2.5-flash",
 };
 
 interface ConfigFileProvider {
@@ -87,6 +89,7 @@ function loadFromEnvVars(): void {
   const builtins = [
     { name: "openai", prefix: "OPENAI" },
     { name: "deepseek", prefix: "DEEPSEEK" },
+    { name: "gemini", prefix: "GEMINI" },
   ];
 
   for (const b of builtins) {

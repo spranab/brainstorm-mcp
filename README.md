@@ -1,6 +1,6 @@
 # brainstorm-mcp
 
-An MCP server that runs multi-round brainstorming debates between AI models. Connect it to Claude Code (or any MCP client) and let GPT, DeepSeek, Groq, Ollama, and others debate your ideas — with Claude as an active participant in every round.
+An MCP server that runs multi-round brainstorming debates between AI models. Connect it to Claude Code (or any MCP client) and let GPT, Gemini, DeepSeek, Groq, Ollama, and others debate your ideas — with Claude as an active participant in every round.
 
 **No more single-perspective answers.** brainstorm-mcp pits multiple LLMs against each other so you get diverse viewpoints, critiques, and a consolidated synthesis.
 
@@ -27,7 +27,7 @@ An MCP server that runs multi-round brainstorming debates between AI models. Con
 5. A synthesizer model produces a final consolidated output
 6. You get back a structured debate with the synthesis
 
-**Claude doesn't just orchestrate — it debates alongside GPT, DeepSeek, and others.**
+**Claude doesn't just orchestrate — it debates alongside GPT, Gemini, DeepSeek, and others.**
 
 ## Quick Start
 
@@ -105,6 +105,8 @@ Just set API keys as env vars — the server auto-detects providers:
 ```
 OPENAI_API_KEY=sk-...
 OPENAI_DEFAULT_MODEL=gpt-4o
+GEMINI_API_KEY=AIza...
+GEMINI_DEFAULT_MODEL=gemini-2.5-flash
 DEEPSEEK_API_KEY=sk-...
 DEEPSEEK_DEFAULT_MODEL=deepseek-chat
 GROQ_API_KEY=gsk_...
@@ -120,6 +122,10 @@ Set `BRAINSTORM_CONFIG` to point to a JSON config file:
     "openai": {
       "model": "gpt-4o",
       "apiKeyEnv": "OPENAI_API_KEY"
+    },
+    "gemini": {
+      "model": "gemini-2.5-flash",
+      "apiKeyEnv": "GEMINI_API_KEY"
     },
     "deepseek": {
       "model": "deepseek-chat",
@@ -137,7 +143,7 @@ Set `BRAINSTORM_CONFIG` to point to a JSON config file:
 }
 ```
 
-Known providers (`openai`, `deepseek`, `groq`, `mistral`, `together`) don't need a `baseURL` — it's auto-detected.
+Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`) don't need a `baseURL` — it's auto-detected.
 
 | Field | Required | Description |
 |-------|----------|-------------|
