@@ -1,6 +1,6 @@
 {
   "name": "brainstorm-mcp",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "MCP server for multi-round AI brainstorming debates across multiple models",
   "type": "module",
   "main": "dist/index.js",
@@ -12,7 +12,9 @@
     "brainstorm.config.example.json",
     "manifest.json",
     "smithery.yaml",
-    "README.md"
+    "glama.json",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
