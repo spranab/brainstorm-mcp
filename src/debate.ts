@@ -16,7 +16,16 @@ const MAX_CONTEXT_CHARS = 12_000; // truncate history per response beyond this
 const COST_PER_MILLION: Record<string, number> = {
   "gpt-4o": 5,
   "gpt-4.1": 4,
+  "gpt-5": 10,
+  "gpt-5-mini": 1.5,
+  "gpt-5-nano": 0.5,
+  "gpt-5-pro": 30,
+  "gpt-5.1": 12,
   "gpt-5.2": 15,
+  "gpt-5.2-pro": 40,
+  "gpt-5.3-codex": 20,
+  "gpt-5.4": 9,
+  "gpt-5.4-pro": 50,
   "o3": 20,
   "o4-mini": 2,
   "deepseek-chat": 0.5,
@@ -69,7 +78,7 @@ async function callModel(
             model: model.modelId,
             messages,
             temperature: 0.7,
-            max_completion_tokens: 4096,
+            max_completion_tokens: 8192,
           },
           { signal: controller.signal }
         )
@@ -83,9 +92,17 @@ async function callModel(
           { signal: controller.signal }
         );
 
-    const content = response.choices[0]?.message?.content;
+    const choice = response.choices[0];
+    const content = choice?.message?.content;
     if (!content) {
-      throw new Error(`Model ${label} returned an empty response`);
+      const finishReason = choice?.finish_reason || "unknown";
+      const refusal = (choice?.message as any)?.refusal;
+      const detail = refusal
+        ? `refusal: ${refusal}`
+        : `finish_reason: ${finishReason}`;
+      throw new Error(
+        `Model ${label} returned an empty response (${detail})`
+      );
     }
     return content;
   } catch (err: unknown) {

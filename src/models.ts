@@ -15,7 +15,7 @@ const KNOWN_BASE_URLS: Record<string, string> = {
 };
 
 const KNOWN_DEFAULT_MODELS: Record<string, string> = {
-  openai: "gpt-4o",
+  openai: "gpt-5.4",
   deepseek: "deepseek-chat",
   gemini: "gemini-2.5-flash",
 };
