@@ -1,7 +1,7 @@
 {
   "providers": {
     "openai": {
-      "model": "gpt-4o",
+      "model": "gpt-5.4",
       "apiKeyEnv": "OPENAI_API_KEY"
     },
     "gemini": {

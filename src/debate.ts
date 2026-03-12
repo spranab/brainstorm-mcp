@@ -24,7 +24,7 @@ const COST_PER_MILLION: Record<string, number> = {
   "gpt-5.2": 15,
   "gpt-5.2-pro": 40,
   "gpt-5.3-codex": 20,
-  "gpt-5.4": 9,
+  "gpt-5.4": 10,
   "gpt-5.4-pro": 50,
   "o3": 20,
   "o4-mini": 2,

@@ -5,3 +5,4 @@ brainstorm.config.json
 *.env
 .env*
 .claude/settings.json
+.brainstorm/
