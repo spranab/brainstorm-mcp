@@ -1,5 +1,7 @@
 # brainstorm-mcp
 
+[![IdeaCred](https://ideacred.com/api/badge/spranab/brainstorm-mcp)](https://ideacred.com/profile/spranab)
+
 An MCP server that runs multi-round brainstorming debates between AI models. Connect it to Claude Code (or any MCP client) and let GPT, Gemini, DeepSeek, Groq, Ollama, and others debate your ideas — with Claude as an active participant in every round.
 
 **No more single-perspective answers.** brainstorm-mcp pits multiple LLMs against each other so you get diverse viewpoints, critiques, and a consolidated synthesis.
