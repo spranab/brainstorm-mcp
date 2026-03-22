@@ -9,11 +9,17 @@ export function registerBrainstormTool(server: McpServer): void {
   server.tool(
     "brainstorm",
     "Run a multi-round brainstorming debate between multiple AI models. " +
-      "By default, YOU (Claude) participate as an active debater alongside the external models. " +
-      "When participate=true (default), this tool returns after external models respond in round 1. " +
-      "You MUST then read their responses, form your own perspective, and call brainstorm_respond " +
-      "with your contribution. This repeats each round until the debate concludes with a synthesis. " +
-      "When participate=false, the full debate runs without your input.",
+      "IMPORTANT: Before calling this tool, you MUST ask the user to choose a mode:\n\n" +
+      "1. **API mode** — Uses external API keys to call models (OpenAI, Gemini, DeepSeek, etc.). " +
+      "Best when the user has API keys configured.\n" +
+      "2. **Hosted mode** — No API keys needed. You execute prompts using sub-agents with models " +
+      "available in your environment (opus/sonnet/haiku, GPT, Gemini, etc.). " +
+      "Same model can be used multiple times — each run produces different perspectives.\n\n" +
+      "Present these two options to the user with a one-liner explanation, then proceed based on their choice.\n\n" +
+      "For API mode: set mode='api'. When participate=true (default), YOU also participate as a debater " +
+      "alongside external models via brainstorm_respond.\n" +
+      "For Hosted mode: set mode='hosted'. Ask the user which models to use, then spawn sub-agents " +
+      "for each model, collect responses, and call brainstorm_collect.",
     {
       topic: z
         .string()
@@ -51,11 +57,88 @@ export function registerBrainstormTool(server: McpServer): void {
           "Whether Claude should actively participate as a debater in each round (default: true). " +
             "Set to false for a non-interactive debate between external models only."
         ),
+      mode: z
+        .enum(["api", "hosted"])
+        .default("api")
+        .describe(
+          "Execution mode. 'api' (default): MCP server calls model APIs directly. " +
+            "'hosted': MCP server returns prompts for the HOST to execute using its own model access " +
+            "(e.g., Claude Code sub-agents, Copilot model switching). No API keys needed in hosted mode."
+        ),
     },
-    async ({ topic, models, rounds, synthesizer, systemPrompt, participate }) => {
+    async ({ topic, models, rounds, synthesizer, systemPrompt, participate, mode }) => {
       try {
         const modelList =
           models && models.length > 0 ? models : getDefaultModels();
+
+        // Auto-detect hosted mode: if user-provided models don't use "provider:model" format,
+        // they're likely host model labels (e.g., "opus", "sonnet", "haiku", "gpt-4o")
+        const effectiveMode =
+          mode === "hosted" ||
+          (models &&
+            models.length > 0 &&
+            models.every((m) => !m.includes(":")))
+            ? "hosted"
+            : mode;
+
+        // Hosted mode: return prompts for host to execute
+        if (effectiveMode === "hosted") {
+          if (modelList.length < 2) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text:
+                    "Need at least 2 models for hosted brainstorming. " +
+                    "Specify models like: models: [\"opus\", \"sonnet\", \"haiku\"]",
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          const synthesizerLabel = synthesizer || modelList[0];
+
+          const session = createSession({
+            topic,
+            modelIdentifiers: modelList,
+            totalRounds: rounds,
+            synthesizerIdentifier: synthesizerLabel,
+            systemPrompt,
+            mode: "hosted",
+            hostedPhase: "round",
+          });
+
+          const round1System =
+            systemPrompt ||
+            "You are participating in a multi-model brainstorming debate. " +
+              "Provide your best thinking on the given topic. " +
+              "Be specific, creative, and substantive.";
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text:
+                  `# Brainstorm: ${topic}\n\n` +
+                  `**Session:** ${session.id}\n` +
+                  `**Mode:** hosted\n` +
+                  `**Models:** ${modelList.join(", ")}\n` +
+                  `**Synthesizer:** ${synthesizerLabel}\n` +
+                  `**Round 1 of ${rounds}**\n\n` +
+                  `## Prompt to Execute\n\n` +
+                  `**System message:**\n${round1System}\n\n` +
+                  `**User message:**\n${topic}\n\n` +
+                  `---\n\n` +
+                  `Execute the above prompt separately with each model: **${modelList.join("**, **")}**\n` +
+                  `(e.g., use sub-agents with the specified model parameter)\n\n` +
+                  `Then call \`brainstorm_collect\` with:\n` +
+                  `- session_id: "${session.id}"\n` +
+                  `- responses: [${modelList.map((m) => `{ model: "${m}", content: "..." }`).join(", ")}]`,
+              },
+            ],
+          };
+        }
 
         // Non-interactive mode: full debate without Claude
         if (!participate) {

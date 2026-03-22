@@ -21,6 +21,8 @@ export function createSession(params: {
   totalRounds: number;
   synthesizerIdentifier: string;
   systemPrompt?: string;
+  mode?: "hosted";
+  hostedPhase?: "round" | "synthesis";
 }): DebateSession {
   cleanExpired();
 

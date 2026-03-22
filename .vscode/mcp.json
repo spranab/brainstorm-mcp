@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "brainstorm": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        "BRAINSTORM_CONFIG": "${workspaceFolder}/brainstorm.config.json"
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerBrainstormTool } from "./tools/brainstorm.js";
 import { registerBrainstormRespondTool } from "./tools/brainstorm-respond.js";
+import { registerBrainstormCollectTool } from "./tools/brainstorm-collect.js";
 import { registerListProvidersTool } from "./tools/list-models.js";
 import { registerAddProviderTool } from "./tools/add-model.js";
 import { loadProviders } from "./models.js";
@@ -11,11 +12,12 @@ loadProviders();
 
 const server = new McpServer({
   name: "brainstorm",
-  version: "1.3.0",
+  version: "1.4.0",
 });
 
 registerBrainstormTool(server);
 registerBrainstormRespondTool(server);
+registerBrainstormCollectTool(server);
 registerListProvidersTool(server);
 registerAddProviderTool(server);
 

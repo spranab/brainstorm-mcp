@@ -49,4 +49,6 @@ export interface DebateSession {
   createdAt: number;
   totalCharsProcessed: number;
   status: "awaiting_host" | "complete";
+  mode?: "hosted";
+  hostedPhase?: "round" | "synthesis";
 }
