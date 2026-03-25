@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "brainstorm-mcp",
   "display_name": "Brainstorm — Multi-Model AI Debates",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "MCP server for multi-model AI brainstorming, code review, and quick perspectives. No API keys needed in hosted mode.",
   "long_description": "brainstorm-mcp lets your AI assistant orchestrate structured debates between multiple LLMs. Ask Claude to brainstorm a topic, and it runs a multi-round debate across GPT, Gemini, DeepSeek, Groq, Ollama, or any OpenAI-compatible model.\n\n**Key features:**\n- **Hosted mode** — No API keys needed. Uses models available in your environment (Claude Opus/Sonnet/Haiku, GPT, Gemini) via sub-agents.\n- **API mode** — Direct model API calls with parallel execution.\n- **brainstorm_quick** — Instant multi-model perspectives in under 10 seconds.\n- **brainstorm_review** — Multi-model code review with structured findings, severity ratings, and verdicts.\n- **Debate styles** — Freeform, red-team (adversarial), and Socratic (probing questions).\n- **Context injection** — Ground debates in actual code, diffs, or docs.\n- **3-bullet synthesis verdicts** — Recommendation, Key Tradeoffs, Strongest Disagreement.\n- Multi-round debates with cross-model critique.\n- Resilient — one model failing doesn't abort the debate.\n- Works with any OpenAI-compatible API (including local Ollama).",
   "author": {
