@@ -28,6 +28,7 @@ export function registerBrainstormCollectTool(server: McpServer): void {
         .min(1)
         .describe("Array of model responses collected by the host"),
     },
+    { readOnlyHint: true },
     async ({ session_id, responses }) => {
       try {
         const session = getSession(session_id);

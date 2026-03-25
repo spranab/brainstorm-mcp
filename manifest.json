@@ -34,7 +34,7 @@
   ],
   "license": "MIT",
   "icon": "icon.png",
-  "privacy_policies": [],
+  "privacy_policies": ["https://github.com/spranab/brainstorm-mcp/blob/main/PRIVACY.md"],
   "server": {
     "type": "node",
     "entry_point": "dist/index.js",

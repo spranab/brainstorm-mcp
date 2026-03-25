@@ -82,6 +82,7 @@ export function registerBrainstormTool(server: McpServer): void {
             "sub-agents with models available in the environment (opus/sonnet/haiku, GPT, Gemini, etc.)."
         ),
     },
+    { readOnlyHint: true },
     async ({ topic, models, rounds, synthesizer, systemPrompt, context, style, participate, mode }) => {
       try {
         // If mode not provided, ask the user to choose

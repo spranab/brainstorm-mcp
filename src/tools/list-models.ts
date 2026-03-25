@@ -6,6 +6,7 @@ export function registerListProvidersTool(server: McpServer): void {
     "list_providers",
     "List all configured AI providers and their default models for brainstorming.",
     {},
+    { readOnlyHint: true },
     async () => {
       const providers = listProviders();
       const lines = providers.map((p) => {

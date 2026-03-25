@@ -25,6 +25,7 @@ export function registerBrainstormRespondTool(server: McpServer): void {
             "Engage deeply with the other models' responses. Minimum 50 characters."
         ),
     },
+    { readOnlyHint: true },
     async ({ session_id, response }) => {
       try {
         const session = getSession(session_id);

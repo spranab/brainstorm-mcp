@@ -1,39 +1,30 @@
 # brainstorm-mcp
 
+[![npm](https://img.shields.io/npm/v/brainstorm-mcp)](https://www.npmjs.com/package/brainstorm-mcp)
 [![IdeaCred](https://ideacred.com/api/badge/spranab/brainstorm-mcp)](https://ideacred.com/profile/spranab)
 
-An MCP server that runs multi-round brainstorming debates between AI models. Connect it to Claude Code (or any MCP client) and let GPT, Gemini, DeepSeek, Groq, Ollama, and others debate your ideas — with Claude as an active participant in every round.
+Multi-model AI brainstorming MCP server. Orchestrates debates between GPT, Gemini, DeepSeek, and Claude with structured synthesis. Includes instant quick mode, multi-model code review with verdicts, and red-team/Socratic styles. Hosted mode needs zero API keys.
 
-**No more single-perspective answers.** brainstorm-mcp pits multiple LLMs against each other so you get diverse viewpoints, critiques, and a consolidated synthesis.
+**Don't trust one AI. Make them argue.**
 
 ## Features
 
-- **Claude as participant** — Claude debates alongside external models, bringing full conversation context
+- **Hosted mode** — No API keys needed. Uses models in your environment (Claude Opus/Sonnet/Haiku) via sub-agents
+- **API mode** — Direct model API calls with parallel execution across OpenAI, Gemini, DeepSeek, Groq, Ollama
+- **brainstorm_quick** — Instant multi-model perspectives in under 10 seconds
+- **brainstorm_review** — Multi-model code review with structured findings, severity ratings, and verdicts
+- **Debate styles** — Freeform, red-team (adversarial), and Socratic (probing questions)
+- **Context injection** — Ground debates in actual code, diffs, or architecture docs
+- **3-bullet synthesis verdicts** — Recommendation, Key Tradeoffs, Strongest Disagreement
+- **Claude as participant** — Claude debates alongside external models with full conversation context
 - **Multi-round debates** — Models see and critique each other's responses across rounds
 - **Parallel execution** — All models respond concurrently within each round
-- **Per-model timeouts** — 2-minute timeout per API call, one slow model won't block others
-- **Context truncation** — Automatically truncates history when approaching context limits
-- **Cost estimation** — Shows estimated token usage and cost per debate
 - **Resilient** — One model failing doesn't abort the debate
-- **Synthesizer fallback** — If the primary synthesizer fails, tries other models
-- **Session management** — Interactive sessions with 10-minute TTL, automatic cleanup
-- **GPT-5.x / o3 / o4 compatible** — Automatically uses `max_completion_tokens` for newer OpenAI models
 - **Cross-platform** — Works on macOS, Windows, and Linux
 
-## How It Works
+## Installation
 
-1. You ask Claude: *"Brainstorm the best architecture for a real-time app"*
-2. The tool sends the topic to all configured AI models in parallel (Round 1)
-3. Claude reads their responses and contributes its own perspective
-4. All models (including Claude) see each other's responses and refine their positions (Rounds 2-N)
-5. A synthesizer model produces a final consolidated output
-6. You get back a structured debate with the synthesis
-
-**Claude doesn't just orchestrate — it debates alongside GPT, Gemini, DeepSeek, and others.**
-
-## Quick Start
-
-### With Claude Code
+### Claude Code
 
 Add to your project's `.mcp.json`:
 
@@ -45,6 +36,7 @@ Add to your project's `.mcp.json`:
       "args": ["-y", "brainstorm-mcp"],
       "env": {
         "OPENAI_API_KEY": "sk-...",
+        "GEMINI_API_KEY": "AIza...",
         "DEEPSEEK_API_KEY": "sk-..."
       }
     }
@@ -52,9 +44,9 @@ Add to your project's `.mcp.json`:
 }
 ```
 
-### With Claude Desktop
+### Claude Desktop
 
-Add to your Claude Desktop config (`claude_desktop_config.json`):
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -71,132 +63,140 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 }
 ```
 
-### Manual install
+### Manual Install
 
 ```bash
 npm install -g brainstorm-mcp
 brainstorm-mcp
 ```
 
-Then just ask Claude:
-
-> *"Brainstorm the best way to handle authentication in a microservices architecture"*
-
-## Interactive Mode (Claude as Participant)
-
-By default, Claude actively participates in every round of the debate:
-
-1. **Round 1**: External models respond to the topic independently
-2. **Claude's turn**: Claude reads their responses and contributes its own perspective via `brainstorm_respond`
-3. **Round 2**: External models see Claude's response alongside everyone else's, and refine
-4. **Claude's turn**: Claude refines its position based on the new responses
-5. Repeat until all rounds are complete, then synthesis runs automatically
-
-This means Claude brings its full conversation context into the debate — it knows what you've been working on, what you've discussed, and can contribute meaningfully rather than just passing messages.
-
-To run a non-interactive debate (external models only, no Claude participation):
-
-> *"Brainstorm with participate=false about..."*
+> **Hosted mode** requires no API keys — just install and go. The host (Claude Code) executes prompts using its own model access.
 
 ## Configuration
 
 ### Option 1: Environment Variables (simplest)
 
-Just set API keys as env vars — the server auto-detects providers:
-
 ```
 OPENAI_API_KEY=sk-...
-OPENAI_DEFAULT_MODEL=gpt-4o
 GEMINI_API_KEY=AIza...
-GEMINI_DEFAULT_MODEL=gemini-2.5-flash
 DEEPSEEK_API_KEY=sk-...
-DEEPSEEK_DEFAULT_MODEL=deepseek-chat
-GROQ_API_KEY=gsk_...
 ```
 
 ### Option 2: Config File (full control)
 
-Set `BRAINSTORM_CONFIG` to point to a JSON config file:
+Set `BRAINSTORM_CONFIG` to point to a JSON config:
 
 ```json
 {
   "providers": {
-    "openai": {
-      "model": "gpt-4o",
-      "apiKeyEnv": "OPENAI_API_KEY"
-    },
-    "gemini": {
-      "model": "gemini-2.5-flash",
-      "apiKeyEnv": "GEMINI_API_KEY"
-    },
-    "deepseek": {
-      "model": "deepseek-chat",
-      "apiKeyEnv": "DEEPSEEK_API_KEY"
-    },
-    "groq": {
-      "model": "llama-3.3-70b-versatile",
-      "apiKeyEnv": "GROQ_API_KEY"
-    },
-    "ollama": {
-      "model": "llama3.1",
-      "baseURL": "http://localhost:11434/v1"
-    }
+    "openai": { "model": "gpt-5.4", "apiKeyEnv": "OPENAI_API_KEY" },
+    "gemini": { "model": "gemini-2.5-flash", "apiKeyEnv": "GEMINI_API_KEY" },
+    "deepseek": { "model": "deepseek-chat", "apiKeyEnv": "DEEPSEEK_API_KEY" },
+    "ollama": { "model": "llama3.1", "baseURL": "http://localhost:11434/v1" }
   }
 }
 ```
 
-Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`) don't need a `baseURL` — it's auto-detected.
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `model` | Yes | Default model ID to use |
-| `apiKeyEnv` | No | Environment variable name for the API key. Omit for local models (Ollama) |
-| `baseURL` | No | API endpoint. Auto-detected for known providers |
+Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`) don't need a `baseURL`.
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `brainstorm` | Run a multi-round debate between configured AI models |
-| `brainstorm_respond` | Submit Claude's response for the current round of an interactive session |
-| `list_providers` | Show all configured providers, models, and API key status |
-| `add_provider` | Dynamically add a provider at runtime |
-
-### `brainstorm` Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `topic` | string | required | What to brainstorm about |
-| `models` | string[] | all providers | Specific models as `provider:model` |
-| `rounds` | number | 3 | Number of debate rounds (1-10) |
-| `synthesizer` | string | first model | Model for final synthesis |
-| `systemPrompt` | string | — | Custom system prompt for all models |
-| `participate` | boolean | true | Whether Claude joins as an active debater |
-
-### `brainstorm_respond` Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `session_id` | string | Session ID from the brainstorm tool |
-| `response` | string | Claude's contribution (min 50 chars) |
+| Tool | Description | Annotation |
+|------|-------------|------------|
+| `brainstorm` | Multi-round debate between AI models (API or hosted mode) | readOnly |
+| `brainstorm_quick` | Instant multi-model perspectives — parallel, no rounds | readOnly |
+| `brainstorm_review` | Multi-model code review with findings, severity, verdict | readOnly |
+| `brainstorm_respond` | Submit Claude's response in an interactive session | readOnly |
+| `brainstorm_collect` | Submit model responses in a hosted session | readOnly |
+| `list_providers` | Show configured providers and API key status | readOnly |
+| `add_provider` | Add a new AI provider at runtime | non-destructive |
 
 ## Usage Examples
 
-### Basic brainstorm
+### Example 1: Quick Multi-Model Perspectives
 
-> "Brainstorm the pros and cons of microservices vs monolith for a startup"
+**Prompt:** "Use brainstorm_quick to compare Redis vs PostgreSQL for session storage"
 
-### Targeted models
+**Tool called:** `brainstorm_quick`
+```json
+{ "topic": "Redis vs PostgreSQL for session storage in a Node.js app" }
+```
 
-> "Use brainstorm with models openai:gpt-4o and deepseek:deepseek-chat to debate whether React or Vue is better for enterprise apps"
+**Output:** Each configured model responds independently in parallel. You get a side-by-side comparison in under 10 seconds with model names, responses, timing, and cost.
 
-### Deep dive with more rounds
+**Error handling:** If a model fails (rate limit, timeout), the tool continues with remaining models and shows which ones failed.
 
-> "Brainstorm with 5 rounds: what's the best database strategy for a social media app with 10M users?"
+---
+
+### Example 2: Multi-Model Code Review
+
+**Prompt:** "Review this diff for security issues" (with a git diff pasted)
+
+**Tool called:** `brainstorm_review`
+```json
+{
+  "diff": "diff --git a/src/auth.ts ...",
+  "title": "Add JWT authentication middleware",
+  "focus": ["security", "correctness"]
+}
+```
+
+**Output:** A structured verdict (approve / approve with warnings / needs changes) with a findings table showing severity, category, file, line numbers, and suggestions. Includes model agreement analysis — issues flagged by multiple models have higher confidence.
+
+**Error handling:** If synthesis fails, raw model reviews are still returned.
+
+---
+
+### Example 3: Hosted Mode Brainstorm (No API Keys)
+
+**Prompt:** "Brainstorm using opus, sonnet, and haiku about whether we should use GraphQL or REST"
+
+**Tool called:** `brainstorm`
+```json
+{
+  "topic": "GraphQL vs REST for our public API",
+  "models": ["opus", "sonnet", "haiku"],
+  "mode": "hosted",
+  "rounds": 2,
+  "style": "redteam"
+}
+```
+
+**Output:** The tool returns prompts for each model. The host (Claude Code) spawns sub-agents with different models, collects responses, and feeds them back via `brainstorm_collect`. After all rounds, a synthesis model produces a 3-bullet verdict: Recommendation, Key Tradeoffs, Strongest Disagreement.
+
+**Error handling:** Sessions expire after 10 minutes. If a session is not found, a clear error message is returned with instructions to start a new one.
+
+## How It Works
+
+### API Mode
+1. You ask Claude to brainstorm a topic
+2. The tool sends the topic to all configured AI models in parallel
+3. Claude reads their responses and contributes its own perspective
+4. Models see each other's responses and refine across rounds
+5. A synthesizer produces the final verdict
+
+### Hosted Mode
+1. You ask Claude to brainstorm with specific models (e.g., opus, sonnet, haiku)
+2. The tool returns prompts — no API calls are made
+3. Claude spawns sub-agents with different models to execute prompts
+4. Responses are collected and fed back for the next round
+5. Repeat until synthesis
 
 ## Privacy Policy
 
-brainstorm-mcp itself does not collect any user data. It acts as a proxy to the AI providers you configure. Your prompts and debate content are sent to the respective provider APIs (OpenAI, DeepSeek, Groq, etc.) according to their privacy policies. For local models (Ollama), all data stays on your machine.
+brainstorm-mcp runs entirely on your machine and does **not** collect, store, or transmit any personal data, telemetry, or analytics.
+
+In **API mode**, prompts are sent directly from your machine to the model providers you configure (OpenAI, Gemini, DeepSeek, etc.) using your own API keys. In **hosted mode**, no external API calls are made.
+
+Debate sessions are stored in-memory only with a 10-minute TTL. No data is written to disk unless you explicitly save results.
+
+Full privacy policy: [PRIVACY.md](PRIVACY.md)
+
+## Support
+
+- **Issues**: https://github.com/spranab/brainstorm-mcp/issues
+- **Email**: developer@pranab.co.in
+- **Repository**: https://github.com/spranab/brainstorm-mcp
 
 ## Development
 
@@ -207,11 +207,6 @@ npm install
 npm run build
 npm start
 ```
-
-## Support
-
-- **Issues**: https://github.com/spranab/brainstorm-mcp/issues
-- **Repository**: https://github.com/spranab/brainstorm-mcp
 
 ## License
 

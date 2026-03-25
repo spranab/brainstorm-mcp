@@ -31,6 +31,7 @@ export function registerBrainstormQuickTool(server: McpServer): void {
         .default("freeform")
         .describe("Perspective style (default: freeform)"),
     },
+    { readOnlyHint: true },
     async ({ topic, models, context, style }) => {
       try {
         const startTime = Date.now();

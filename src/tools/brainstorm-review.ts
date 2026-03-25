@@ -90,6 +90,7 @@ export function registerBrainstormReviewTool(server: McpServer): void {
           "Optional: specific models as 'provider:model'. Default: all configured providers."
         ),
     },
+    { readOnlyHint: true },
     async ({ diff, title, description, instructions, focus, models }) => {
       try {
         const startTime = Date.now();

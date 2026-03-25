@@ -22,6 +22,7 @@ export function registerAddProviderTool(server: McpServer): void {
         .string()
         .describe("Default model to use for this provider, e.g. 'llama3', 'mixtral-8x7b-32768'"),
     },
+    { destructiveHint: false },
     async ({ name, baseURL, apiKeyEnvVar, defaultModel }) => {
       try {
         addProvider({ name, baseURL, apiKeyEnvVar, defaultModel });
