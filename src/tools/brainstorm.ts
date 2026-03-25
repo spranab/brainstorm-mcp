@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { runDebate, runExternalRound } from "../debate.js";
+import { runDebate, runExternalRound, getRound1System, buildEffectiveTopic } from "../debate.js";
 import { getDefaultModels } from "../models.js";
 import { createSession } from "../sessions.js";
 import { formatResult, formatRoundResponses } from "../format.js";
@@ -50,6 +50,21 @@ export function registerBrainstormTool(server: McpServer): void {
         .describe(
           "Optional system prompt to guide the brainstorming style or constraints"
         ),
+      context: z
+        .string()
+        .optional()
+        .describe(
+          "Optional context to ground the debate — code snippets, PR diffs, error logs, " +
+            "architecture docs, etc. Models will see this alongside the topic."
+        ),
+      style: z
+        .enum(["freeform", "redteam", "socratic"])
+        .default("freeform")
+        .describe(
+          "Debate style. 'freeform' (default): open brainstorming. " +
+            "'redteam': adversarial — models find flaws, risks, and weaknesses. " +
+            "'socratic': probing questions that expose assumptions and push for deeper understanding."
+        ),
       participate: z
         .boolean()
         .default(true)
@@ -59,15 +74,35 @@ export function registerBrainstormTool(server: McpServer): void {
         ),
       mode: z
         .enum(["api", "hosted"])
-        .default("api")
+        .optional()
         .describe(
-          "Execution mode. 'api' (default): MCP server calls model APIs directly. " +
-            "'hosted': MCP server returns prompts for the HOST to execute using its own model access " +
-            "(e.g., Claude Code sub-agents, Copilot model switching). No API keys needed in hosted mode."
+          "Execution mode. Must be provided — if not, the tool will return options for the user to choose.\n" +
+            "'api' — MCP server calls model APIs directly using configured API keys.\n" +
+            "'hosted' — No API keys needed. Returns prompts for the HOST to execute using " +
+            "sub-agents with models available in the environment (opus/sonnet/haiku, GPT, Gemini, etc.)."
         ),
     },
-    async ({ topic, models, rounds, synthesizer, systemPrompt, participate, mode }) => {
+    async ({ topic, models, rounds, synthesizer, systemPrompt, context, style, participate, mode }) => {
       try {
+        // If mode not provided, ask the user to choose
+        if (!mode) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text:
+                  "**Which brainstorm mode would you like to use?**\n\n" +
+                  "1. **API mode** — I'll call external model APIs directly (OpenAI, Gemini, DeepSeek). " +
+                  "Requires API keys to be configured.\n" +
+                  "2. **Hosted mode** — No API keys needed! You execute prompts using models available " +
+                  "in your environment (e.g., Claude Opus/Sonnet/Haiku, GPT, Gemini). " +
+                  "Same model can be used multiple times for diverse perspectives.\n\n" +
+                  "Please ask the user to choose **api** or **hosted**, then call this tool again with the `mode` parameter set.",
+              },
+            ],
+          };
+        }
+
         const modelList =
           models && models.length > 0 ? models : getDefaultModels();
 
@@ -107,13 +142,14 @@ export function registerBrainstormTool(server: McpServer): void {
             systemPrompt,
             mode: "hosted",
             hostedPhase: "round",
+            context,
+            style: style === "freeform" ? undefined : style,
           });
 
-          const round1System =
-            systemPrompt ||
-            "You are participating in a multi-model brainstorming debate. " +
-              "Provide your best thinking on the given topic. " +
-              "Be specific, creative, and substantive.";
+          const round1System = getRound1System(style, systemPrompt);
+          const effectiveTopic = buildEffectiveTopic(topic, context);
+
+          const styleLabel = style !== "freeform" ? `**Style:** ${style}\n` : "";
 
           return {
             content: [
@@ -123,12 +159,13 @@ export function registerBrainstormTool(server: McpServer): void {
                   `# Brainstorm: ${topic}\n\n` +
                   `**Session:** ${session.id}\n` +
                   `**Mode:** hosted\n` +
+                  styleLabel +
                   `**Models:** ${modelList.join(", ")}\n` +
                   `**Synthesizer:** ${synthesizerLabel}\n` +
                   `**Round 1 of ${rounds}**\n\n` +
                   `## Prompt to Execute\n\n` +
                   `**System message:**\n${round1System}\n\n` +
-                  `**User message:**\n${topic}\n\n` +
+                  `**User message:**\n${effectiveTopic}\n\n` +
                   `---\n\n` +
                   `Execute the above prompt separately with each model: **${modelList.join("**, **")}**\n` +
                   `(e.g., use sub-agents with the specified model parameter)\n\n` +
@@ -174,7 +211,9 @@ export function registerBrainstormTool(server: McpServer): void {
           };
         }
 
-        // Interactive mode: Claude participates
+        // Interactive mode: Claude participates (context injected into topic for API calls)
+        const effectiveTopicApi = buildEffectiveTopic(topic, context);
+
         if (modelList.length < 1) {
           return {
             content: [
@@ -195,12 +234,12 @@ export function registerBrainstormTool(server: McpServer): void {
 
         // Run round 1 with external models
         const { responses, failedModels } = await runExternalRound(
-          topic,
+          effectiveTopicApi,
           modelList,
           1,
           rounds,
           [],
-          systemPrompt,
+          getRound1System(style, systemPrompt),
           onProgress
         );
 

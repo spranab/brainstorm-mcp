@@ -23,6 +23,8 @@ export function createSession(params: {
   systemPrompt?: string;
   mode?: "hosted";
   hostedPhase?: "round" | "synthesis";
+  context?: string;
+  style?: "freeform" | "redteam" | "socratic";
 }): DebateSession {
   cleanExpired();
 

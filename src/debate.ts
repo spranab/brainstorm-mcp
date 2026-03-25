@@ -12,6 +12,110 @@ import {
 const DEFAULT_TIMEOUT_MS = 120_000; // 2 minutes per model call
 const MAX_CONTEXT_CHARS = 12_000; // truncate history per response beyond this
 
+// --- Style-aware prompt helpers ---
+
+export function getRound1System(
+  style?: string,
+  customSystemPrompt?: string
+): string {
+  if (customSystemPrompt) return customSystemPrompt;
+
+  switch (style) {
+    case "redteam":
+      return (
+        "You are participating in an adversarial red-team review. " +
+        "Your job is to find flaws, risks, and weaknesses in the given topic or proposal. " +
+        "Be critical, thorough, and specific. Challenge assumptions, identify edge cases, " +
+        "and propose failure scenarios. Do not be agreeable — your value comes from finding " +
+        "problems others miss."
+      );
+    case "socratic":
+      return (
+        "You are participating in a Socratic dialogue. Rather than stating positions, " +
+        "focus on asking probing questions that expose assumptions, contradictions, and gaps " +
+        "in reasoning. When you do take a position, defend it by addressing the strongest " +
+        "counterarguments. Push for deeper understanding, not consensus."
+      );
+    default:
+      return (
+        "You are participating in a multi-model brainstorming debate. " +
+        "Provide your best thinking on the given topic. " +
+        "Be specific, creative, and substantive."
+      );
+  }
+}
+
+export function getRoundNSystem(
+  roundNumber: number,
+  totalRounds: number,
+  style?: string
+): string {
+  const base =
+    `You are in round ${roundNumber} of ${totalRounds} of a multi-model brainstorming debate. ` +
+    `You can see all previous responses from all participants. `;
+
+  switch (style) {
+    case "redteam":
+      return (
+        base +
+        "Continue your adversarial analysis. Challenge the strongest arguments from the " +
+        "previous round. Look for overlooked risks, unstated assumptions, and potential failure modes. " +
+        "If others found valid flaws, acknowledge them and dig deeper."
+      );
+    case "socratic":
+      return (
+        base +
+        "Continue the Socratic dialogue. Ask deeper questions based on previous responses. " +
+        "Challenge the strongest-seeming answers. Push toward fundamental principles and " +
+        "uncover hidden assumptions."
+      );
+    default:
+      return (
+        base +
+        "Build upon the best ideas, challenge weak reasoning, add new perspectives, " +
+        "and refine your position. Be specific about what you agree/disagree with and why."
+      );
+  }
+}
+
+export function getSynthesisSystem(style?: string): string {
+  const baseInstruction =
+    "You are the synthesizer in a multi-model brainstorming debate. " +
+    "Produce a structured verdict with exactly these sections:\n\n" +
+    "## Recommendation\nOne clear, opinionated recommendation (2-3 sentences max).\n\n" +
+    "## Key Tradeoffs\nThe 2-3 most important tradeoffs or considerations (bullet points).\n\n" +
+    "## Strongest Disagreement\nThe single most important unresolved disagreement — " +
+    "state each side's strongest argument. Do NOT water this down into 'both have merit.'\n\n";
+
+  switch (style) {
+    case "redteam":
+      return (
+        baseInstruction +
+        "Focus on which criticisms were valid vs. overblown. " +
+        "The recommendation should address the real risks identified."
+      );
+    case "socratic":
+      return (
+        baseInstruction +
+        "Focus on which questions revealed genuine gaps vs. which were satisfactorily answered. " +
+        "The recommendation should reflect the deepest insights uncovered."
+      );
+    default:
+      return (
+        baseInstruction +
+        "Be thorough but concise. Prioritize actionable insight over comprehensiveness."
+      );
+  }
+}
+
+export function buildEffectiveTopic(
+  topic: string,
+  context?: string
+): string {
+  if (!context) return topic;
+  return `Context:\n${context}\n\nTopic: ${topic}`;
+}
+
 // Rough cost per 1M tokens (input + output blended estimate)
 const COST_PER_MILLION: Record<string, number> = {
   "gpt-4o": 5,
@@ -207,11 +311,7 @@ export async function runExternalRound(
   );
 
   if (roundNumber === 1) {
-    const round1System =
-      systemPrompt ||
-      "You are participating in a multi-model brainstorming debate. " +
-        "Provide your best thinking on the given topic. " +
-        "Be specific, creative, and substantive.";
+    const round1System = getRound1System(undefined, systemPrompt);
 
     const results = await Promise.allSettled(
       models.map((m) => callModel(m.resolved, m.label, round1System, topic))
@@ -232,11 +332,7 @@ export async function runExternalRound(
   // Rounds 2+: refinement with full history
   const history = buildHistoryContext(previousRounds);
 
-  const roundSystem =
-    `You are in round ${roundNumber} of ${totalRounds} of a multi-model brainstorming debate. ` +
-    `You can see all previous responses from all participants (including the host AI). ` +
-    `Build upon the best ideas, challenge weak reasoning, add new perspectives, ` +
-    `and refine your position. Be specific about what you agree/disagree with and why.`;
+  const roundSystem = getRoundNSystem(roundNumber, totalRounds);
 
   const roundUserMessage =
     `Original topic: ${topic}\n\n${history}\n\n` +
@@ -268,22 +364,17 @@ export async function runSynthesis(
   allRounds: RoundResponse[][],
   synthesizerIdentifier: string,
   modelIdentifiers: string[],
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  style?: string
 ): Promise<string> {
   const log = onProgress || (() => {});
   const fullHistory = buildHistoryContext(allRounds);
 
-  const synthesisSystem =
-    "You are the synthesizer in a multi-model brainstorming debate. " +
-    "Create a comprehensive, well-organized final output that: " +
-    "(1) Identifies the strongest ideas and points of consensus, " +
-    "(2) Notes important points of disagreement and why they matter, " +
-    "(3) Provides a clear, actionable conclusion. " +
-    "Be thorough but concise.";
+  const synthesisSystem = getSynthesisSystem(style);
 
   const synthesisUserMessage =
     `Original topic: ${topic}\n\n${fullHistory}\n\n` +
-    `Please synthesize the above debate into a comprehensive final output.`;
+    `Please synthesize the above debate into a structured verdict.`;
 
   log(`Synthesizing final output using ${synthesizerIdentifier}...`);
 
@@ -362,11 +453,7 @@ export async function runDebate(
     `Round 1/${rounds}: ${models.map((m) => m.label).join(", ")} responding...`
   );
 
-  const round1System =
-    systemPrompt ||
-    "You are participating in a multi-model brainstorming debate. " +
-      "Provide your best thinking on the given topic. " +
-      "Be specific, creative, and substantive.";
+  const round1System = getRound1System(undefined, systemPrompt);
 
   const round1Results = await Promise.allSettled(
     models.map((m) => callModel(m.resolved, m.label, round1System, topic))
@@ -397,11 +484,7 @@ export async function runDebate(
 
     const history = buildHistoryContext(allRounds);
 
-    const roundSystem =
-      `You are in round ${r} of ${rounds} of a multi-model brainstorming debate. ` +
-      `You can see all previous responses from all participants. ` +
-      `Build upon the best ideas, challenge weak reasoning, add new perspectives, ` +
-      `and refine your position. Be specific about what you agree/disagree with and why.`;
+    const roundSystem = getRoundNSystem(r, rounds);
 
     const roundUserMessage =
       `Original topic: ${topic}\n\n${history}\n\n` +
@@ -438,17 +521,11 @@ export async function runDebate(
 
   const fullHistory = buildHistoryContext(allRounds);
 
-  const synthesisSystem =
-    "You are the synthesizer in a multi-model brainstorming debate. " +
-    "Create a comprehensive, well-organized final output that: " +
-    "(1) Identifies the strongest ideas and points of consensus, " +
-    "(2) Notes important points of disagreement and why they matter, " +
-    "(3) Provides a clear, actionable conclusion. " +
-    "Be thorough but concise.";
+  const synthesisSystem = getSynthesisSystem();
 
   const synthesisUserMessage =
     `Original topic: ${topic}\n\n${fullHistory}\n\n` +
-    `Please synthesize the above debate into a comprehensive final output.`;
+    `Please synthesize the above debate into a structured verdict.`;
 
   let synthesis: string;
   try {

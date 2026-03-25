@@ -51,4 +51,6 @@ export interface DebateSession {
   status: "awaiting_host" | "complete";
   mode?: "hosted";
   hostedPhase?: "round" | "synthesis";
+  context?: string;
+  style?: "freeform" | "redteam" | "socratic";
 }

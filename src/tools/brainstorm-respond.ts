@@ -80,7 +80,8 @@ export function registerBrainstormRespondTool(server: McpServer): void {
             session.rounds,
             session.synthesizerIdentifier,
             session.modelIdentifiers,
-            onProgress
+            onProgress,
+            session.style
           );
           session.totalCharsProcessed += synthesis.length;
 

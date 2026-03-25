@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getSession, deleteSession } from "../sessions.js";
-import { buildHistoryContext, estimateTokens, estimateCost } from "../debate.js";
+import { buildHistoryContext, estimateTokens, estimateCost, getRoundNSystem, getSynthesisSystem, buildEffectiveTopic } from "../debate.js";
 import { formatResult } from "../format.js";
 import { RoundResponse, DebateResult } from "../types.js";
 
@@ -113,14 +113,11 @@ export function registerBrainstormCollectTool(server: McpServer): void {
           const nextRound = roundNumber + 1;
           const history = buildHistoryContext(session.rounds);
 
-          const roundSystem =
-            `You are in round ${nextRound} of ${session.totalRounds} of a multi-model brainstorming debate. ` +
-            `You can see all previous responses from all participants. ` +
-            `Build upon the best ideas, challenge weak reasoning, add new perspectives, ` +
-            `and refine your position. Be specific about what you agree/disagree with and why.`;
+          const roundSystem = getRoundNSystem(nextRound, session.totalRounds, session.style);
 
+          const effectiveTopic = buildEffectiveTopic(session.topic, session.context);
           const roundUserMessage =
-            `Original topic: ${session.topic}\n\n${history}\n\n` +
+            `Original topic: ${effectiveTopic}\n\n${history}\n\n` +
             `Now provide your refined response for round ${nextRound}. Consider all perspectives above.`;
 
           return {
@@ -147,17 +144,12 @@ export function registerBrainstormCollectTool(server: McpServer): void {
 
         const fullHistory = buildHistoryContext(session.rounds);
 
-        const synthesisSystem =
-          "You are the synthesizer in a multi-model brainstorming debate. " +
-          "Create a comprehensive, well-organized final output that: " +
-          "(1) Identifies the strongest ideas and points of consensus, " +
-          "(2) Notes important points of disagreement and why they matter, " +
-          "(3) Provides a clear, actionable conclusion. " +
-          "Be thorough but concise.";
+        const synthesisSystem = getSynthesisSystem(session.style);
 
+        const effectiveTopicSynth = buildEffectiveTopic(session.topic, session.context);
         const synthesisUserMessage =
-          `Original topic: ${session.topic}\n\n${fullHistory}\n\n` +
-          `Please synthesize the above debate into a comprehensive final output.`;
+          `Original topic: ${effectiveTopicSynth}\n\n${fullHistory}\n\n` +
+          `Please synthesize the above debate into a structured verdict.`;
 
         const synthModel = session.synthesizerIdentifier;
 
