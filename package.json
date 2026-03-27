@@ -1,6 +1,7 @@
 {
   "name": "brainstorm-mcp",
-  "version": "1.5.3",
+  "mcpName": "io.github.spranab/brainstorm-mcp",
+  "version": "1.5.4",
   "description": "MCP server for multi-round AI brainstorming debates across multiple models",
   "type": "module",
   "main": "dist/index.js",
