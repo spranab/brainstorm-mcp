@@ -23,6 +23,10 @@ Multi-model AI brainstorming MCP server. Orchestrates debates between GPT, Gemin
 - **Resilient** — One model failing doesn't abort the debate
 - **Cross-platform** — Works on macOS, Windows, and Linux
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/spranab-brainstorm-mcp).
+
 ## Installation
 
 ### Claude Code
