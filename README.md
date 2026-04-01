@@ -3,10 +3,21 @@
 
 [![npm](https://img.shields.io/npm/v/brainstorm-mcp)](https://www.npmjs.com/package/brainstorm-mcp)
 [![IdeaCred](https://ideacred.com/api/badge/spranab/brainstorm-mcp)](https://ideacred.com/profile/spranab)
+[![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Launch-orange)](https://www.producthunt.com/products/brainstorm-3?launch=brainstorm-4)
 
 Multi-model AI brainstorming MCP server. Orchestrates debates between GPT, Gemini, DeepSeek, and Claude with structured synthesis. Includes instant quick mode, multi-model code review with verdicts, and red-team/Socratic styles. Hosted mode needs zero API keys.
 
 **Don't trust one AI. Make them argue.**
+
+<p align="center">
+  <img src="docs/hero.png" alt="brainstorm-mcp — Claude Opus vs GPT-5.4 vs DeepSeek debating" width="800"/>
+</p>
+
+### Demo
+
+[![Watch the demo](https://img.youtube.com/vi/L5kli5_fgkI/maxresdefault.jpg)](https://youtu.be/L5kli5_fgkI)
+
+> Click to watch: 3 models debate, cross-examine, and produce a structured verdict — all inside Claude Code.
 
 ## Features
 
