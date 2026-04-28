@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/spranab-brainstorm-mcp-badge.png)](https://mseep.ai/app/spranab-brainstorm-mcp)
+
 <!-- mcp-name: io.github.spranab/brainstorm-mcp -->
 # brainstorm-mcp
 
