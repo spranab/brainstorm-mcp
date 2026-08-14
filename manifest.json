@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "brainstorm-mcp",
   "display_name": "Brainstorm — Multi-Model AI Debates",
-  "version": "1.5.3",
+  "version": "1.6.0",
   "description": "MCP server for multi-model AI brainstorming, code review, and quick perspectives. No API keys needed in hosted mode.",
-  "long_description": "brainstorm-mcp lets your AI assistant orchestrate structured debates between multiple LLMs. Ask Claude to brainstorm a topic, and it runs a multi-round debate across GPT, Gemini, DeepSeek, Groq, Ollama, or any OpenAI-compatible model.\n\n**Key features:**\n- **Hosted mode** — No API keys needed. Uses models available in your environment (Claude Opus/Sonnet/Haiku, GPT, Gemini) via sub-agents.\n- **API mode** — Direct model API calls with parallel execution.\n- **brainstorm_quick** — Instant multi-model perspectives in under 10 seconds.\n- **brainstorm_review** — Multi-model code review with structured findings, severity ratings, and verdicts.\n- **Debate styles** — Freeform, red-team (adversarial), and Socratic (probing questions).\n- **Context injection** — Ground debates in actual code, diffs, or docs.\n- **3-bullet synthesis verdicts** — Recommendation, Key Tradeoffs, Strongest Disagreement.\n- Multi-round debates with cross-model critique.\n- Resilient — one model failing doesn't abort the debate.\n- Works with any OpenAI-compatible API (including local Ollama).",
+  "long_description": "brainstorm-mcp lets your AI assistant orchestrate structured debates between multiple LLMs. Ask Claude to brainstorm a topic, and it runs a multi-round debate across GPT, Gemini, DeepSeek, Groq, Ollama, or any OpenAI-compatible model.\n\n**Key features:**\n- **Hosted mode** — No API keys needed. Uses models available in your environment (Claude Opus/Sonnet/Haiku, GPT, Gemini) via sub-agents.\n- **API mode** — Direct model API calls with parallel execution.\n- **CLI mode** — Debate through agent CLIs you already have (claude, codex, and more), so debates run on your existing subscription instead of API credits. Any supported CLI on your PATH is detected automatically.\n- **brainstorm_quick** — Instant multi-model perspectives in under 10 seconds.\n- **brainstorm_review** — Multi-model code review with structured findings, severity ratings, and verdicts.\n- **Debate styles** — Freeform, red-team (adversarial), and Socratic (probing questions).\n- **Context injection** — Ground debates in actual code, diffs, or docs.\n- **3-bullet synthesis verdicts** — Recommendation, Key Tradeoffs, Strongest Disagreement.\n- Multi-round debates with cross-model critique.\n- Resilient — one model failing doesn't abort the debate.\n- Works with any OpenAI-compatible API (including local Ollama).",
   "author": {
     "name": "Pranab",
     "email": "developer@pranab.co.in",
@@ -54,8 +54,8 @@
     { "name": "brainstorm_review", "description": "Multi-model code review with structured findings, severity ratings, and verdict" },
     { "name": "brainstorm_respond", "description": "Submit Claude's response in an interactive brainstorm session" },
     { "name": "brainstorm_collect", "description": "Submit collected model responses in a hosted brainstorm session" },
-    { "name": "list_providers", "description": "Show all configured providers, models, and API key status" },
-    { "name": "add_provider", "description": "Dynamically add a new AI provider at runtime" }
+    { "name": "list_providers", "description": "Show all configured providers — API keys, and agent CLIs detected on PATH" },
+    { "name": "add_provider", "description": "Dynamically add a new API or CLI provider at runtime" }
   ],
   "compatibility": {
     "platforms": ["darwin", "win32", "linux"],

@@ -6,3 +6,8 @@ brainstorm.config.json
 .env*
 .claude/settings.json
 .brainstorm/
+.DS_Store
+
+# Marketing/launch assets — kept local
+blog-devto.md
+ph-assets/

@@ -23,6 +23,7 @@ Multi-model AI brainstorming MCP server. Orchestrates debates between GPT, Gemin
 
 - **Hosted mode** — No API keys needed. Uses models in your environment (Claude Opus/Sonnet/Haiku) via sub-agents
 - **API mode** — Direct model API calls with parallel execution across OpenAI, Gemini, DeepSeek, Groq, Ollama
+- **CLI mode** — Debate through agent CLIs you already have (`claude`, `codex`, and more) so debates run on your **subscription instead of API credits**
 - **brainstorm_quick** — Instant multi-model perspectives in under 10 seconds
 - **brainstorm_review** — Multi-model code review with structured findings, severity ratings, and verdicts
 - **Debate styles** — Freeform, red-team (adversarial), and Socratic (probing questions)
@@ -109,7 +110,104 @@ Set `BRAINSTORM_CONFIG` to point to a JSON config:
 }
 ```
 
-Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`) don't need a `baseURL`.
+Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`, `moonshot`,
+`minimax`, `glm`, `qwen`) don't need a `baseURL`.
+
+### Option 3: CLI Providers (use a subscription, not API credits)
+
+If you already pay for Claude Code, Codex, Gemini CLI, and friends, brainstorm can shell out to
+those CLIs instead of buying API credits. **Any agent CLI found on your `PATH` is registered
+automatically at startup** — no configuration needed:
+
+```
+[brainstorm] Detected CLI provider(s) on PATH: claude, codex (subscription-based, no API cost)
+```
+
+Use them like any other provider:
+
+```json
+{ "topic": "GraphQL vs REST", "models": ["claude:sonnet", "codex:default", "openai:gpt-5.4"] }
+```
+
+Built-in adapters:
+
+| Provider | Command | Default model | Status |
+|----------|---------|---------------|--------|
+| `claude` | `claude -p` | `sonnet` | verified |
+| `codex` | `codex exec` | `default` | verified |
+| `gemini` | `gemini -p` | `gemini-2.5-pro` | best-effort, verify locally |
+| `cursor-agent` | `cursor-agent -p` | `default` | best-effort |
+| `opencode` | `opencode run` | `default` | best-effort |
+| `qwen` | `qwen -p` | `qwen3-coder-plus` | best-effort |
+| `kimi` | `kimi --print` | `default` | best-effort |
+| `droid` | `droid exec` | `default` | best-effort |
+
+`<provider>:default` means "let the CLI use whatever model it's configured with". CLI calls run
+with tools disabled and a read-only sandbox where the CLI supports it — they generate text, they
+don't touch your repo. Provider-specific API key env vars (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`)
+are stripped from the child process so the CLI falls back to your subscription login.
+
+Env knobs:
+
+| Variable | Effect |
+|----------|--------|
+| `BRAINSTORM_CLI_PROVIDERS` | `auto` (default), `off`, or a comma-separated list of adapters to detect |
+| `BRAINSTORM_PREFER_CLI` | `1` — debates with no explicit `models` use only CLI providers, skipping metered APIs |
+| `BRAINSTORM_CLI_TIMEOUT_MS` | Per-call timeout for CLI providers (default 300000) |
+
+To pin a model or add a CLI that isn't built in, use the config file:
+
+```json
+{
+  "providers": {
+    "claude": { "type": "cli", "model": "opus" },
+    "my-cli": {
+      "type": "cli",
+      "adapter": "custom",
+      "command": "some-agent-cli",
+      "args": ["run", "--model", "{{model}}", "--quiet", "{{prompt}}"],
+      "promptVia": "arg",
+      "model": "some-model"
+    }
+  }
+}
+```
+
+Template placeholders: `{{model}}`, `{{system}}`, `{{prompt}}`, `{{outfile}}`. A lone placeholder
+that resolves to nothing drops out of the command line along with the flag introducing it, so
+`["--model", "{{model}}"]` works even for `provider:default`. Set `"promptVia": "stdin"` to pipe
+the prompt instead of passing it as an argument.
+
+#### Coding-plan backends through the Claude CLI
+
+Moonshot (Kimi), MiniMax, and Z.ai (GLM) sell coding-plan subscriptions that speak the Anthropic
+API. Point the `claude` binary at one of them and that vendor joins the debate on the plan you
+already pay for:
+
+```json
+{
+  "providers": {
+    "moonshot": { "type": "cli", "backend": "moonshot", "model": "kimi-k2-thinking" },
+    "minimax":  { "type": "cli", "backend": "minimax",  "model": "MiniMax-M2" },
+    "glm":      { "type": "cli", "backend": "glm",      "model": "glm-4.6" }
+  }
+}
+```
+
+| Backend | Endpoint | Token env var |
+|---------|----------|---------------|
+| `moonshot` | `https://api.moonshot.ai/anthropic` | `MOONSHOT_API_KEY` |
+| `minimax` | `https://api.minimax.io/anthropic` | `MINIMAX_API_KEY` |
+| `glm` | `https://api.z.ai/api/anthropic` | `ZAI_API_KEY` |
+
+The token is read from your environment at call time — the config file holds the variable name,
+never the secret. `ANTHROPIC_API_KEY` is stripped from the child so your Anthropic account is
+never billed for these. Any CLI provider also accepts an `"env"` block to override the backend
+manually; a value of `"$NAME"` indirects through the server's environment.
+
+These vendors are reachable as plain metered APIs too — `moonshot`, `minimax`, `glm` and `qwen`
+have known base URLs, so `MOONSHOT_API_KEY` alone is enough to register `moonshot` as an API
+provider.
 
 ## Tools
 
@@ -120,8 +218,8 @@ Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`) 
 | `brainstorm_review` | Multi-model code review with findings, severity, verdict | readOnly |
 | `brainstorm_respond` | Submit Claude's response in an interactive session | readOnly |
 | `brainstorm_collect` | Submit model responses in a hosted session | readOnly |
-| `list_providers` | Show configured providers and API key status | readOnly |
-| `add_provider` | Add a new AI provider at runtime | non-destructive |
+| `list_providers` | Show configured providers, API key status, and detected CLIs | readOnly |
+| `add_provider` | Add a new API or CLI provider at runtime | non-destructive |
 
 ## Usage Examples
 
@@ -180,9 +278,9 @@ Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`) 
 
 ## How It Works
 
-### API Mode
+### API / CLI Mode
 1. You ask Claude to brainstorm a topic
-2. The tool sends the topic to all configured AI models in parallel
+2. The tool sends the topic to all configured providers in parallel — HTTP for API providers, a spawned subprocess for CLI providers
 3. Claude reads their responses and contributes its own perspective
 4. Models see each other's responses and refine across rounds
 5. A synthesizer produces the final verdict
@@ -198,7 +296,7 @@ Known providers (`openai`, `gemini`, `deepseek`, `groq`, `mistral`, `together`) 
 
 brainstorm-mcp runs entirely on your machine and does **not** collect, store, or transmit any personal data, telemetry, or analytics.
 
-In **API mode**, prompts are sent directly from your machine to the model providers you configure (OpenAI, Gemini, DeepSeek, etc.) using your own API keys. In **hosted mode**, no external API calls are made.
+In **API mode**, prompts are sent directly from your machine to the model providers you configure (OpenAI, Gemini, DeepSeek, etc.) using your own API keys. In **CLI mode**, prompts are passed to agent CLIs installed on your machine, which talk to their own vendors under your existing subscription. In **hosted mode**, no external API calls are made.
 
 Debate sessions are stored in-memory only with a 10-minute TTL. No data is written to disk unless you explicitly save results.
 

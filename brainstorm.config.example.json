@@ -20,6 +20,39 @@
     "ollama": {
       "model": "llama3.1",
       "baseURL": "http://localhost:11434/v1"
+    },
+
+    "claude": {
+      "type": "cli",
+      "model": "sonnet"
+    },
+    "codex": {
+      "type": "cli",
+      "model": "default"
+    },
+    "moonshot": {
+      "type": "cli",
+      "backend": "moonshot",
+      "model": "kimi-k2-thinking"
+    },
+    "minimax": {
+      "type": "cli",
+      "backend": "minimax",
+      "model": "MiniMax-M2"
+    },
+    "glm": {
+      "type": "cli",
+      "backend": "glm",
+      "model": "glm-4.6"
+    },
+    "my-cli": {
+      "type": "cli",
+      "adapter": "custom",
+      "command": "some-agent-cli",
+      "args": ["run", "--model", "{{model}}", "--quiet", "{{prompt}}"],
+      "promptVia": "arg",
+      "model": "some-model",
+      "timeoutMs": 300000
     }
   }
 }
