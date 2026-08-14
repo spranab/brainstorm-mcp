@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { getClient } from "./client.js";
-import { resolveModel } from "./models.js";
+import { callCliModel } from "./cli.js";
+import { isCliModel, resolveModel } from "./models.js";
 import {
   ResolvedModel,
   RoundResponse,
@@ -145,15 +146,30 @@ export function estimateTokens(text: string): number {
 }
 
 export function estimateCost(models: string[], totalTokens: number): string {
+  if (!models.length) return "~$0.0000";
+
   let totalCostPerMillion = 0;
+  let cliCount = 0;
   for (const id of models) {
+    // CLI providers run on an existing subscription — no metered API spend.
+    if (isCliModel(id)) {
+      cliCount++;
+      continue;
+    }
     const modelName = id.split(":")[1] || id;
     totalCostPerMillion +=
       COST_PER_MILLION[modelName] ?? DEFAULT_COST_PER_MILLION;
   }
+
   const avgCostPerMillion = totalCostPerMillion / models.length;
   const cost = (totalTokens / 1_000_000) * avgCostPerMillion;
-  return `~$${cost.toFixed(4)}`;
+  const suffix =
+    cliCount === models.length
+      ? " (all models via CLI subscriptions)"
+      : cliCount
+        ? ` (${cliCount} of ${models.length} via CLI subscriptions)`
+        : "";
+  return `~$${cost.toFixed(4)}${suffix}`;
 }
 
 async function callModel(
@@ -161,8 +177,25 @@ async function callModel(
   label: string,
   systemMessage: string,
   userMessage: string,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS
+  timeoutOverrideMs?: number
 ): Promise<string> {
+  if (model.kind === "cli") {
+    if (!model.cli) {
+      throw new Error(`Provider ${model.provider} is missing its CLI configuration`);
+    }
+    // CLI timeouts default separately (BRAINSTORM_CLI_TIMEOUT_MS) — agent CLIs
+    // spin up a whole session per call and run longer than a raw API request.
+    return callCliModel(
+      model.cli,
+      model.modelId,
+      label,
+      systemMessage,
+      userMessage,
+      timeoutOverrideMs
+    );
+  }
+
+  const timeoutMs = timeoutOverrideMs ?? DEFAULT_TIMEOUT_MS;
   const client = getClient(model);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);

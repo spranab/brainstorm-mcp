@@ -1,7 +1,7 @@
 {
   "name": "brainstorm-mcp",
   "mcpName": "io.github.spranab/brainstorm-mcp",
-  "version": "1.5.7",
+  "version": "1.6.0",
   "description": "MCP server for multi-round AI brainstorming debates across multiple models",
   "type": "module",
   "main": "dist/index.js",
@@ -15,6 +15,7 @@
     "smithery.yaml",
     "glama.json",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE",
     "icon.png"
   ],

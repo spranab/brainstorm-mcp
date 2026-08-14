@@ -10,8 +10,10 @@ export function registerBrainstormTool(server: McpServer): void {
     "brainstorm",
     "Run a multi-round brainstorming debate between multiple AI models. " +
       "IMPORTANT: Before calling this tool, you MUST ask the user to choose a mode:\n\n" +
-      "1. **API mode** — Uses external API keys to call models (OpenAI, Gemini, DeepSeek, etc.). " +
-      "Best when the user has API keys configured.\n" +
+      "1. **API mode** — Calls configured providers. These are either HTTP APIs billed per token " +
+      "(OpenAI, Gemini, DeepSeek, ...) or locally installed agent CLIs such as 'claude' and 'codex', " +
+      "which run on the user's existing subscription at no API cost. Call list_providers to see " +
+      "which of each are available.\n" +
       "2. **Hosted mode** — No API keys needed. You execute prompts using sub-agents with models " +
       "available in your environment (opus/sonnet/haiku, GPT, Gemini, etc.). " +
       "Same model can be used multiple times — each run produces different perspectives.\n\n" +
@@ -28,7 +30,8 @@ export function registerBrainstormTool(server: McpServer): void {
         .array(z.string())
         .optional()
         .describe(
-          "Optional: specific models to use as 'provider:model' (e.g. 'openai:gpt-4o'). " +
+          "Optional: specific models to use as 'provider:model' (e.g. 'openai:gpt-4o', " +
+            "or 'claude:sonnet' / 'codex:default' for subscription-backed CLI providers). " +
             "If not provided, all configured providers are used with their default models."
         ),
       rounds: z

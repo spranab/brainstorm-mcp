@@ -18,7 +18,9 @@ export function registerBrainstormQuickTool(server: McpServer): void {
         .array(z.string())
         .optional()
         .describe(
-          "Optional: specific models as 'provider:model'. If not provided, all configured providers are used."
+          "Optional: specific models as 'provider:model' (API providers, or CLI providers " +
+            "like 'claude:sonnet' that use a subscription instead of API credits). " +
+            "If not provided, all configured providers are used."
         ),
       context: z
         .string()
