@@ -2,10 +2,20 @@
 # brainstorm-mcp
 
 [![npm](https://img.shields.io/npm/v/brainstorm-mcp)](https://www.npmjs.com/package/brainstorm-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/brainstorm-mcp)](https://www.npmjs.com/package/brainstorm-mcp)
 [![IdeaCred](https://ideacred.com/api/badge/spranab/brainstorm-mcp)](https://ideacred.com/profile/spranab)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Launch-orange)](https://www.producthunt.com/products/brainstorm-3?launch=brainstorm-4)
 
-Multi-model AI brainstorming MCP server. Orchestrates debates between GPT, Gemini, DeepSeek, and Claude with structured synthesis. Includes instant quick mode, multi-model code review with verdicts, and red-team/Socratic styles. Hosted mode needs zero API keys.
+Ask one model a design question and you get one confident answer, with no
+signal about which parts it is unsure of. Ask three and the disagreement is
+the signal.
+
+brainstorm-mcp runs multi-round debates between GPT, Gemini, DeepSeek, Claude
+and local Ollama models from inside your editor: they see and critique each
+other's answers across rounds, then you get a 3-bullet synthesis —
+recommendation, key tradeoffs, strongest disagreement. Also does instant
+quick mode, multi-model code review with verdicts, and red-team/Socratic
+styles. Hosted mode needs zero API keys.
 
 **Don't trust one AI. Make them argue.**
 
@@ -35,7 +45,15 @@ Multi-model AI brainstorming MCP server. Orchestrates debates between GPT, Gemin
 - **Resilient** — One model failing doesn't abort the debate
 - **Cross-platform** — Works on macOS, Windows, and Linux
 
-## Installation
+## Install (60 seconds)
+
+```bash
+claude mcp add brainstorm -- npx -y brainstorm-mcp
+```
+
+That is enough for hosted mode (no API keys — it debates using the models
+already available in your environment). Add provider keys to bring GPT,
+Gemini, DeepSeek, Groq or Ollama into the debate.
 
 ### Claude Code
 
@@ -317,6 +335,21 @@ npm install
 npm run build
 npm start
 ```
+
+## Related projects
+
+Other agent infrastructure by the same author, built to be used together:
+
+- [saga-mcp](https://github.com/spranab/saga-mcp) — SQLite-backed project
+  tracker: once the debate settles, the decision goes somewhere durable.
+- [yantrikdb-mcp](https://github.com/yantrikos/yantrikdb-mcp) — persistent
+  cognitive memory so the agent remembers what you decided and why.
+- [swarmcode](https://github.com/spranab/swarmcode) — real-time channel
+  between Claude Code instances on different machines.
+- [truenas-mcp](https://github.com/spranab/truenas-mcp) — 278 TrueNAS SCALE
+  actions behind one hierarchical tool.
+- [mcpier](https://github.com/spranab/mcpier) — self-hosted MCP control plane
+  that keeps API keys off your clients.
 
 ## License
 

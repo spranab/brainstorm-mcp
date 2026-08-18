@@ -36,7 +36,12 @@
     "ollama",
     "model-context-protocol",
     "multi-model",
-    "debate"
+    "debate",
+    "mcp-server",
+    "ai-agents",
+    "claude-code",
+    "gemini",
+    "code-review"
   ],
   "repository": {
     "type": "git",
