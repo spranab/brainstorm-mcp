@@ -11,3 +11,7 @@ brainstorm.config.json
 # Marketing/launch assets — kept local
 blog-devto.md
 ph-assets/
+
+# Built extension bundles — build from source instead of committing a
+# versioned binary that goes stale (removed a 7-version-old leftover, 10-28)
+*.mcpb
